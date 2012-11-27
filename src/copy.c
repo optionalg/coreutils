@@ -839,18 +839,21 @@ copy_reg (char const *src_name, char const *dst_name,
          1) the src context may prohibit writing, and
          2) because it's more consistent to use the same context
          that is used when the destination file doesn't already exist.  */
-      if ((x->set_security_context || x->preserve_security_context) && 0 <= dest_desc)
+      if ((x->set_security_context || x->preserve_security_context)
+          && 0 <= dest_desc)
         {
           bool all_errors = (!x->data_copy_required
                              || x->require_preserve_context);
           bool some_errors = !all_errors && !x->reduce_diagnostics;
 
-          if (restorecon(dst_name, 0, x->preserve_security_context) < 0)  {
-            if (all_errors || (some_errors && !errno_unsupported (errno)))
-              error (0, errno, _("failed to set file system context on %s"), quote_n (0, dst_name));
-            return_val = false;
-            goto close_src_and_dst_desc;
-          }
+          if (restorecon (dst_name, 0, x->preserve_security_context) < 0)
+            {
+              if (all_errors || (some_errors && !errno_unsupported (errno)))
+                error (0, errno, _("failed to set file system context on %s"),
+                       quote_n (0, dst_name));
+              return_val = false;
+              goto close_src_and_dst_desc;
+            }
         }
 
       if (dest_desc < 0 && x->unlink_dest_after_failed_open)
@@ -872,7 +875,7 @@ copy_reg (char const *src_name, char const *dst_name,
   if (*new_dst)
     {
       if (x->set_security_context && (! x->require_preserve_context))
-        defaultcon(dst_name, dst_mode);
+        defaultcon (dst_name, dst_mode);
 
     open_with_O_CREAT:;
 
@@ -957,7 +960,7 @@ copy_reg (char const *src_name, char const *dst_name,
     }
 
   if (x->set_security_context && ! x->preserve_security_context)
-    restorecon(dst_name, 1, false);
+    restorecon (dst_name, 1, false);
 
   /* --attributes-only overrides --reflink.  */
   if (data_copy_required && x->reflink_mode)
@@ -2078,7 +2081,7 @@ copy_internal (char const *src_name, char const *dst_name,
                           backup_succeeded ? dst_backup : NULL);
 
           if (x->set_security_context)
-            restorecon(dst_name, 1, false);
+            restorecon (dst_name, 1, false);
 
           if (rename_succeeded)
             *rename_succeeded = true;
@@ -2219,11 +2222,8 @@ copy_internal (char const *src_name, char const *dst_name,
             return false;
         }
     }
-  else
-  {
-    if (x->set_security_context)
-      restorecon(dst_name, 1, false);
-  }
+  else if (x->set_security_context)
+    restorecon (dst_name, 1, false);
 
   if (S_ISDIR (src_mode))
     {

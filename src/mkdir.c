@@ -119,7 +119,7 @@ make_ancestor (char const *dir, char const *component, void *options)
   struct mkdir_options const *o = options;
 
   if (o->set_security_context)
-    defaultcon(dir, S_IFDIR);
+    defaultcon (dir, S_IFDIR);
 
   mode_t user_wx = S_IWUSR | S_IXUSR;
   bool self_denying_umask = (o->umask_value & user_wx) != 0;
@@ -189,12 +189,12 @@ main (int argc, char **argv)
           break;
         case 'Z':
           if (is_selinux_enabled() > 0)
-          {
-            if (optarg)
-              scontext = optarg;
-            else
-              options.set_security_context = true;
-          }
+            {
+              if (optarg)
+                scontext = optarg;
+              else
+                options.set_security_context = true;
+            }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);

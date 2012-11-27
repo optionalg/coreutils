@@ -863,26 +863,29 @@ main (int argc, char **argv)
           break;
 
         case PRESERVE_CONTEXT_OPTION:
-          if ( ! selinux_enabled)
+          if (! selinux_enabled)
             {
               error (0, 0, _("WARNING: ignoring --preserve-context; "
                              "this kernel is not SELinux-enabled"));
               break;
             }
-          if ( x.set_security_context || scontext ) {
-             (void) fprintf(stderr, "%s: cannot force target context and preserve it\n", argv[0]);
-             exit( 1 );
-          }
+          if (x.set_security_context || scontext)
+            {
+              fprintf (stderr,
+                       "%s: cannot force target context and preserve it\n",
+                       argv[0]);
+              exit (1);
+            }
           x.preserve_security_context = true;
           break;
         case 'Z':
-          if ( selinux_enabled )
-          {
-                  if (optarg)
-                          scontext = optarg;
-                  else
-                          x.set_security_context = true;
-          }
+          if (selinux_enabled)
+            {
+              if (optarg)
+                scontext = optarg;
+              else
+                x.set_security_context = true;
+            }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);

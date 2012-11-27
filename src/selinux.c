@@ -41,24 +41,26 @@
   Translates a mode into an Internal SELinux security_class definition.
   Returns 0 on failure, with errno set to EINVAL.
 */
-static security_class_t mode_to_security_class(mode_t m) {
+static security_class_t
+mode_to_security_class (mode_t m)
+{
 
-  if (S_ISREG(m))
-    return string_to_security_class("file");
-  if (S_ISDIR(m))
-    return string_to_security_class("dir");
-  if (S_ISCHR(m))
-    return string_to_security_class("chr_file");
-  if (S_ISBLK(m))
-    return string_to_security_class("blk_file");
-  if (S_ISFIFO(m))
-    return string_to_security_class("fifo_file");
-  if (S_ISLNK(m))
-    return string_to_security_class("lnk_file");
-  if (S_ISSOCK(m))
-    return string_to_security_class("sock_file");
+  if (S_ISREG (m))
+    return string_to_security_class ("file");
+  if (S_ISDIR (m))
+    return string_to_security_class ("dir");
+  if (S_ISCHR (m))
+    return string_to_security_class ("chr_file");
+  if (S_ISBLK (m))
+    return string_to_security_class ("blk_file");
+  if (S_ISFIFO (m))
+    return string_to_security_class ("fifo_file");
+  if (S_ISLNK (m))
+    return string_to_security_class ("lnk_file");
+  if (S_ISSOCK (m))
+    return string_to_security_class ("sock_file");
 
-  errno=EINVAL;
+  errno = EINVAL;
   return 0;
 }
 
@@ -70,28 +72,30 @@ static security_class_t mode_to_security_class(mode_t m) {
   Returns -1 on failure. errno will be set approptiately.
 */
 
-static int computecon(char const *path, mode_t mode, security_context_t *con) {
+static int
+computecon (char const *path, mode_t mode, security_context_t * con)
+{
   security_context_t scon = NULL;
   security_context_t tcon = NULL;
   security_class_t tclass;
   int rc = -1;
 
-  char *dir = strdup(path);
+  char *dir = strdup (path);
   if (!dir)
     goto quit;
-  if (getcon(&scon) < 0)
+  if (getcon (&scon) < 0)
     goto quit;
-  if (getfilecon(dirname((char *) dir), &tcon) < 0)
+  if (getfilecon (dirname ((char *) dir), &tcon) < 0)
     goto quit;
-  tclass = mode_to_security_class(mode);
+  tclass = mode_to_security_class (mode);
   if (!tclass)
     goto quit;
-  rc = security_compute_create(scon, tcon, tclass, con);
+  rc = security_compute_create (scon, tcon, tclass, con);
 
 quit:
-  free(dir);
-  freecon(scon);
-  freecon(tcon);
+  free (dir);
+  freecon (scon);
+  freecon (tcon);
   return rc;
 }
 
@@ -104,36 +108,38 @@ quit:
 
   Returns -1 on failure. errno will be set approptiately.
 */
-int defaultcon (char const *path, mode_t mode) {
+int
+defaultcon (char const *path, mode_t mode)
+{
   int rc = -1;
   security_context_t scon = NULL, tcon = NULL;
   context_t scontext = NULL, tcontext = NULL;
 
-  rc = matchpathcon(path, mode,  &scon);
+  rc = matchpathcon (path, mode, &scon);
   if (rc < 0)
     goto quit;
-  rc = computecon(path, mode,  &tcon);
+  rc = computecon (path, mode, &tcon);
   if (rc < 0)
     goto quit;
-  scontext = context_new(scon);
+  scontext = context_new (scon);
   rc = -1;
   if (!scontext)
     goto quit;
-  tcontext = context_new(tcon);
+  tcontext = context_new (tcon);
   if (!tcontext)
     goto quit;
 
-  context_type_set(tcontext, context_type_get(scontext));
-  rc = setfscreatecon (context_str(tcontext));
+  context_type_set (tcontext, context_type_get (scontext));
+  rc = setfscreatecon (context_str (tcontext));
 
 //  printf("defaultcon %s %s\n", path, context_str(tcontext));
 quit:
   if (scontext)
-    context_free(scontext);
+    context_free (scontext);
   if (scontext)
-    context_free(tcontext);
-  freecon(scon);
-  freecon(tcon);
+    context_free (tcontext);
+  freecon (scon);
+  freecon (tcon);
   return rc;
 }
 
@@ -149,72 +155,81 @@ quit:
 
   Returns -1 on failure. errno will be set approptiately.
 */
-static int restorecon_private (char const *path, bool preserve) {
+static int
+restorecon_private (char const *path, bool preserve)
+{
   int rc = -1;
   struct stat sb;
   security_context_t scon = NULL, tcon = NULL;
   context_t scontext = NULL, tcontext = NULL;
   int fd;
 
-  if (preserve) {
-    if (getfscreatecon (&tcon) < 0)
+  if (preserve)
+    {
+      if (getfscreatecon (&tcon) < 0)
+        return rc;
+      rc = lsetfilecon (path, tcon);
+      freecon (tcon);
       return rc;
-    rc = lsetfilecon (path, tcon);
-    freecon(tcon);
-    return rc;
-  }
+    }
 
   fd = open (path, O_RDONLY | O_NOFOLLOW);
   if (!fd && (errno != ELOOP))
     goto quit;
 
-  if (fd) {
-    rc = fstat (fd, &sb);
-    if (rc < 0)
-      goto quit;
-  } else {
-    rc = lstat (path, &sb);
-    if (rc < 0)
-      goto quit;
-  }
+  if (fd)
+    {
+      rc = fstat (fd, &sb);
+      if (rc < 0)
+        goto quit;
+    }
+  else
+    {
+      rc = lstat (path, &sb);
+      if (rc < 0)
+        goto quit;
+    }
 
-  rc = matchpathcon(path, sb.st_mode,  &scon);
+  rc = matchpathcon (path, sb.st_mode, &scon);
   if (rc < 0)
     goto quit;
-  scontext = context_new(scon);
+  scontext = context_new (scon);
   rc = -1;
   if (!scontext)
     goto quit;
 
-  if (fd) {
-    rc = fgetfilecon (fd, &tcon);
-    if (!rc)
-      goto quit;
-  } else  {
-    rc = lgetfilecon (path, &tcon);
-    if (!rc)
-      goto quit;
-  }
-  tcontext = context_new(tcon);
+  if (fd)
+    {
+      rc = fgetfilecon (fd, &tcon);
+      if (!rc)
+        goto quit;
+    }
+  else
+    {
+      rc = lgetfilecon (path, &tcon);
+      if (!rc)
+        goto quit;
+    }
+  tcontext = context_new (tcon);
   if (!tcontext)
     goto quit;
 
-  context_type_set(tcontext, context_type_get(scontext));
+  context_type_set (tcontext, context_type_get (scontext));
 
   if (fd)
-        rc = fsetfilecon (fd, context_str(tcontext));
+    rc = fsetfilecon (fd, context_str (tcontext));
   else
-        rc = lsetfilecon (path, context_str(tcontext));
+    rc = lsetfilecon (path, context_str (tcontext));
 
 //  printf("restorcon %s %s\n", path, context_str(tcontext));
 quit:
-  close(fd);
+  close (fd);
   if (scontext)
-    context_free(scontext);
+    context_free (scontext);
   if (scontext)
-    context_free(tcontext);
-  freecon(scon);
-  freecon(tcon);
+    context_free (tcontext);
+  freecon (scon);
+  freecon (tcon);
   return rc;
 }
 
@@ -231,15 +246,17 @@ quit:
 
   Returns false on failure. errno will be set approptiately.
 */
-bool restorecon (char const *path, bool recurse, bool preserve) {
+bool
+restorecon (char const *path, bool recurse, bool preserve)
+{
   const char *mypath[2] = { path, NULL };
   FTS *fts;
   bool ok = true;
 
   if (!recurse)
-    return restorecon_private(path, preserve);
+    return restorecon_private (path, preserve);
 
-  fts = fts_open ((char *const *)mypath, FTS_PHYSICAL, NULL);
+  fts = fts_open ((char *const *) mypath, FTS_PHYSICAL, NULL);
   while (1)
     {
       FTSENT *ent;
@@ -256,7 +273,7 @@ bool restorecon (char const *path, bool recurse, bool preserve) {
           break;
         }
 
-      ok &= restorecon_private(fts->fts_path, preserve);
+      ok &= restorecon_private (fts->fts_path, preserve);
     }
 
   if (fts_close (fts) != 0)

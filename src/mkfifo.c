@@ -97,12 +97,12 @@ main (int argc, char **argv)
           break;
         case 'Z':
           if (is_selinux_enabled() > 0)
-          {
-            if (optarg)
-              scontext = optarg;
-            else
-              set_security_context = true;
-          }
+            {
+              if (optarg)
+                scontext = optarg;
+              else
+                set_security_context = true;
+            }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
@@ -149,7 +149,7 @@ main (int argc, char **argv)
 
   for (; optind < argc; ++optind)
     if (set_security_context)
-      defaultcon(argv[optind], S_IFIFO);
+      defaultcon (argv[optind], S_IFIFO);
     if (mkfifo (argv[optind], newmode) != 0)
       {
         error (0, errno, _("cannot create fifo %s"), quote (argv[optind]));

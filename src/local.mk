@@ -327,7 +327,8 @@ copy_sources = \
 # to install before applying any user-specified name transformations.
 
 transform = s/ginstall/install/; $(program_transform_name)
-src_ginstall_SOURCES = src/install.c src/prog-fprintf.c $(copy_sources) $(selinux_sources)
+src_ginstall_SOURCES = src/install.c src/prog-fprintf.c $(copy_sources) \
+		       $(selinux_sources)
 
 # This is for the '[' program.  Automake transliterates '[' and '/' to '_'.
 src___SOURCES = src/lbracket.c

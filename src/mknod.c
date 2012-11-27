@@ -114,12 +114,12 @@ main (int argc, char **argv)
           break;
         case 'Z':
           if (is_selinux_enabled() > 0)
-          {
-            if (optarg)
-              scontext = optarg;
-            else
-              set_security_context = true;
-          }
+            {
+              if (optarg)
+                scontext = optarg;
+              else
+                set_security_context = true;
+            }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
@@ -233,7 +233,7 @@ main (int argc, char **argv)
 #endif
 
         if (set_security_context)
-          defaultcon(argv[optind], node_type);
+          defaultcon (argv[optind], node_type);
 
         if (mknod (argv[optind], newmode | node_type, device) != 0)
           error (EXIT_FAILURE, errno, "%s", quote (argv[optind]));

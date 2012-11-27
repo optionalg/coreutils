@@ -17,10 +17,11 @@
 /* Written by Daniel Walsh <dwalsh@redhat.com> */
 
 #ifndef COREUTILS_SELINUX_H
-#define COREUTILS_SELINUX_H
+# define COREUTILS_SELINUX_H
 
-#include <stdbool.h>
-#include <sys/stat.h>
+# include <stdbool.h>
+# include <sys/stat.h>
+
 extern bool restorecon (char const *path, bool recurse, bool preserve);
 extern int defaultcon (char const *path, mode_t mode);
 #endif

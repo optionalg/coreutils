@@ -197,8 +197,8 @@ main (int argc, char **argv)
     }
 
   if (is_selinux_enabled () != 1)
-    error (EXIT_FAILURE, 0,
-           _("%s may be used only on a SELinux kernel"), program_name);
+    error (EXIT_FAILURE, 0, _("%s may be used only on a SELinux kernel"),
+           program_name);
 
   if (context)
     {
@@ -223,8 +223,7 @@ main (int argc, char **argv)
           /* compute result of process transition */
           if (security_compute_create (cur_context, file_context,
                                        SECCLASS_PROCESS, &new_context) != 0)
-            error (EXIT_FAILURE, errno,
-                   _("failed to compute a new context"));
+            error (EXIT_FAILURE, errno, _("failed to compute a new context"));
           /* free contexts */
           freecon (file_context);
           freecon (cur_context);
