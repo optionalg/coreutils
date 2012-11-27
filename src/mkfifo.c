@@ -26,6 +26,7 @@
 #include "error.h"
 #include "modechange.h"
 #include "quote.h"
+#include "selinux.h"
 #include "smack.h"
 
 /* The official name of this program (e.g., no 'g' prefix).  */
@@ -60,7 +61,7 @@ Create named pipes (FIFOs) with the given NAMEs.\n\
   -m, --mode=MODE    set file permission bits to MODE, not a=rw - umask\n\
 "), stdout);
       fputs (_("\
-  -Z, --context=CTX  set the SELinux security context of each NAME to CTX\n\
+  -Z, --context[=CTX]  set the SELinux security context of each NAME to default type or CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
@@ -74,6 +75,7 @@ main (int argc, char **argv)
 {
   mode_t newmode;
   char const *specified_mode = NULL;
+  int set_security_context = false;
   int exit_status = EXIT_SUCCESS;
   int optc;
   security_context_t scontext = NULL;
@@ -86,7 +88,7 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  while ((optc = getopt_long (argc, argv, "m:Z:", longopts, NULL)) != -1)
+  while ((optc = getopt_long (argc, argv, "m:Z", longopts, NULL)) != -1)
     {
       switch (optc)
         {
@@ -94,7 +96,13 @@ main (int argc, char **argv)
           specified_mode = optarg;
           break;
         case 'Z':
-          scontext = optarg;
+          if (is_selinux_enabled() > 0)
+          {
+            if (optarg)
+              scontext = optarg;
+            else
+              set_security_context = true;
+          }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
@@ -140,6 +148,8 @@ main (int argc, char **argv)
     }
 
   for (; optind < argc; ++optind)
+    if (set_security_context)
+      defaultcon(argv[optind], S_IFIFO);
     if (mkfifo (argv[optind], newmode) != 0)
       {
         error (0, errno, _("cannot create fifo %s"), quote (argv[optind]));

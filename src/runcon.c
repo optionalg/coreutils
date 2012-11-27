@@ -85,7 +85,7 @@ Usage: %s CONTEXT COMMAND [args]\n\
   or:  %s [ -c ] [-u USER] [-r ROLE] [-t TYPE] [-l RANGE] COMMAND [args]\n\
 "), program_name, program_name);
       fputs (_("\
-Run a program in a different security context.\n\
+Run a program in a different SELinux security context.\n\
 With neither CONTEXT nor COMMAND, print the current security context.\n\
 "), stdout);
 

@@ -61,6 +61,7 @@
 #include "write-any-file.h"
 #include "areadlink.h"
 #include "yesno.h"
+#include "selinux.h"
 
 #if USE_XATTR
 # include <attr/error_context.h>
@@ -838,41 +839,18 @@ copy_reg (char const *src_name, char const *dst_name,
          1) the src context may prohibit writing, and
          2) because it's more consistent to use the same context
          that is used when the destination file doesn't already exist.  */
-      if (x->preserve_security_context && 0 <= dest_desc)
+      if ((x->set_security_context || x->preserve_security_context) && 0 <= dest_desc)
         {
           bool all_errors = (!x->data_copy_required
                              || x->require_preserve_context);
           bool some_errors = !all_errors && !x->reduce_diagnostics;
-          security_context_t con = NULL;
 
-          if (getfscreatecon (&con) < 0)
-            {
-              if (all_errors || (some_errors && !errno_unsupported (errno)))
-                error (0, errno, _("failed to get file system create context"));
-              if (x->require_preserve_context)
-                {
-                  return_val = false;
-                  goto close_src_and_dst_desc;
-                }
-            }
-
-          if (con)
-            {
-              if (fsetfilecon (dest_desc, con) < 0)
-                {
-                  if (all_errors || (some_errors && !errno_unsupported (errno)))
-                    error (0, errno,
-                           _("failed to set the security context of %s to %s"),
-                           quote_n (0, dst_name), quote_n (1, con));
-                  if (x->require_preserve_context)
-                    {
-                      return_val = false;
-                      freecon (con);
-                      goto close_src_and_dst_desc;
-                    }
-                }
-              freecon (con);
-            }
+          if (restorecon(dst_name, 0, x->preserve_security_context) < 0)  {
+            if (all_errors || (some_errors && !errno_unsupported (errno)))
+              error (0, errno, _("failed to set file system context on %s"), quote_n (0, dst_name));
+            return_val = false;
+            goto close_src_and_dst_desc;
+          }
         }
 
       if (dest_desc < 0 && x->unlink_dest_after_failed_open)
@@ -893,6 +871,9 @@ copy_reg (char const *src_name, char const *dst_name,
 
   if (*new_dst)
     {
+      if (x->set_security_context && (! x->require_preserve_context))
+        defaultcon(dst_name, dst_mode);
+
     open_with_O_CREAT:;
 
       int open_flags = O_WRONLY | O_CREAT | O_BINARY;
@@ -974,6 +955,9 @@ copy_reg (char const *src_name, char const *dst_name,
       return_val = false;
       goto close_src_and_dst_desc;
     }
+
+  if (x->set_security_context && ! x->preserve_security_context)
+    restorecon(dst_name, 1, false);
 
   /* --attributes-only overrides --reflink.  */
   if (data_copy_required && x->reflink_mode)
@@ -2093,6 +2077,9 @@ copy_internal (char const *src_name, char const *dst_name,
             emit_verbose (src_name, dst_name,
                           backup_succeeded ? dst_backup : NULL);
 
+          if (x->set_security_context)
+            restorecon(dst_name, 1, false);
+
           if (rename_succeeded)
             *rename_succeeded = true;
 
@@ -2232,6 +2219,11 @@ copy_internal (char const *src_name, char const *dst_name,
             return false;
         }
     }
+  else
+  {
+    if (x->set_security_context)
+      restorecon(dst_name, 1, false);
+  }
 
   if (S_ISDIR (src_mode))
     {

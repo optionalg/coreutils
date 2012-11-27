@@ -29,6 +29,7 @@
 #include "prog-fprintf.h"
 #include "quote.h"
 #include "savewd.h"
+#include "selinux.h"
 #include "smack.h"
 
 /* The official name of this program (e.g., no 'g' prefix).  */
@@ -65,8 +66,8 @@ Create the DIRECTORY(ies), if they do not already exist.\n\
   -m, --mode=MODE   set file mode (as in chmod), not a=rwx - umask\n\
   -p, --parents     no error if existing, make parent directories as needed\n\
   -v, --verbose     print a message for each created directory\n\
-  -Z, --context=CTX  set the SELinux security context of each created\n\
-                      directory to CTX\n\
+  -Z, --context[=CTX]  set the SELinux security context of each created\n\
+                      directory to default type or to CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
@@ -91,6 +92,9 @@ struct mkdir_options
   /* File mode bits affected by MODE.  */
   mode_t mode_bits;
 
+  /* Set the SELinux File Context.  */
+  int set_security_context;
+
   /* If not null, format to use when reporting newly made directories.  */
   char const *created_directory_format;
 };
@@ -113,12 +117,15 @@ static int
 make_ancestor (char const *dir, char const *component, void *options)
 {
   struct mkdir_options const *o = options;
-  int r;
+
+  if (o->set_security_context)
+    defaultcon(dir, S_IFDIR);
+
   mode_t user_wx = S_IWUSR | S_IXUSR;
   bool self_denying_umask = (o->umask_value & user_wx) != 0;
   if (self_denying_umask)
     umask (o->umask_value & ~user_wx);
-  r = mkdir (component, S_IRWXUGO);
+  int r = mkdir (component, S_IRWXUGO);
   if (self_denying_umask)
     {
       int mkdir_errno = errno;
@@ -157,6 +164,7 @@ main (int argc, char **argv)
   options.mode = S_IRWXUGO;
   options.mode_bits = 0;
   options.created_directory_format = NULL;
+  options.set_security_context = false;
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);
@@ -166,7 +174,7 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  while ((optc = getopt_long (argc, argv, "pm:vZ:", longopts, NULL)) != -1)
+  while ((optc = getopt_long (argc, argv, "pm:vZ", longopts, NULL)) != -1)
     {
       switch (optc)
         {
@@ -180,7 +188,13 @@ main (int argc, char **argv)
           options.created_directory_format = _("created directory %s");
           break;
         case 'Z':
-          scontext = optarg;
+          if (is_selinux_enabled() > 0)
+          {
+            if (optarg)
+              scontext = optarg;
+            else
+              options.set_security_context = true;
+          }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);

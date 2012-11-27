@@ -26,6 +26,7 @@
 #include "error.h"
 #include "modechange.h"
 #include "quote.h"
+#include "selinux.h"
 #include "smack.h"
 #include "xstrtol.h"
 
@@ -62,7 +63,7 @@ Create the special file NAME of the given TYPE.\n\
   -m, --mode=MODE    set file permission bits to MODE, not a=rw - umask\n\
 "), stdout);
       fputs (_("\
-  -Z, --context=CTX  set the SELinux security context of NAME to CTX\n\
+  -Z, --context[=CTX]  set the SELinux security context of NAME to default type or to CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
@@ -94,6 +95,7 @@ main (int argc, char **argv)
   int expected_operands;
   mode_t node_type;
   security_context_t scontext = NULL;
+  int set_security_context = false;
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);
@@ -103,7 +105,7 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  while ((optc = getopt_long (argc, argv, "m:Z:", longopts, NULL)) != -1)
+  while ((optc = getopt_long (argc, argv, "m:Z", longopts, NULL)) != -1)
     {
       switch (optc)
         {
@@ -111,7 +113,13 @@ main (int argc, char **argv)
           specified_mode = optarg;
           break;
         case 'Z':
-          scontext = optarg;
+          if (is_selinux_enabled() > 0)
+          {
+            if (optarg)
+              scontext = optarg;
+            else
+              set_security_context = true;
+          }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
@@ -223,6 +231,9 @@ main (int argc, char **argv)
         if (device == NODEV)
           error (EXIT_FAILURE, 0, _("invalid device %s %s"), s_major, s_minor);
 #endif
+
+        if (set_security_context)
+          defaultcon(argv[optind], node_type);
 
         if (mknod (argv[optind], newmode | node_type, device) != 0)
           error (EXIT_FAILURE, errno, "%s", quote (argv[optind]));

@@ -141,6 +141,7 @@ static struct option const long_opts[] =
   {"target-directory", required_argument, NULL, 't'},
   {"update", no_argument, NULL, 'u'},
   {"verbose", no_argument, NULL, 'v'},
+  {GETOPT_SELINUX_CONTEXT_OPTION_DECL},
   {GETOPT_HELP_OPTION_DECL},
   {GETOPT_VERSION_OPTION_DECL},
   {NULL, 0, NULL, 0}
@@ -227,6 +228,7 @@ Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.\n\
                                  destination file is missing\n\
   -v, --verbose                explain what is being done\n\
   -x, --one-file-system        stay on this file system\n\
+  -Z, --context[=CTX]      set security context of destination file to default type or to CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
@@ -784,6 +786,7 @@ cp_option_init (struct cp_options *x)
   x->explicit_no_preserve_mode = false;
   x->preserve_security_context = false;
   x->require_preserve_context = false;
+  x->set_security_context = false;
   x->preserve_xattr = false;
   x->reduce_diagnostics = false;
   x->require_preserve_xattr = false;
@@ -875,8 +878,10 @@ decode_preserve_arg (char const *arg, struct cp_options *x, bool on_off)
           break;
 
         case PRESERVE_CONTEXT:
-          x->preserve_security_context = on_off;
-          x->require_preserve_context = on_off;
+          if (! x->set_security_context) {
+            x->preserve_security_context = on_off;
+            x->require_preserve_context = on_off;
+          }
           break;
 
         case PRESERVE_XATTR:
@@ -890,7 +895,7 @@ decode_preserve_arg (char const *arg, struct cp_options *x, bool on_off)
           x->preserve_ownership = on_off;
           x->preserve_links = on_off;
           x->explicit_no_preserve_mode = !on_off;
-          if (selinux_enabled)
+          if (selinux_enabled && (! x->set_security_context))
             x->preserve_security_context = on_off;
           x->preserve_xattr = on_off;
           break;
@@ -933,7 +938,7 @@ main (int argc, char **argv)
      we'll actually use backup_suffix_string.  */
   backup_suffix_string = getenv ("SIMPLE_BACKUP_SUFFIX");
 
-  while ((c = getopt_long (argc, argv, "abdfHilLnprst:uvxPRS:T",
+  while ((c = getopt_long (argc, argv, "abdfHilLnprst:uvxPRS:TZ",
                            long_opts, NULL))
          != -1)
     {
@@ -960,7 +965,7 @@ main (int argc, char **argv)
           x.preserve_mode = true;
           x.preserve_timestamps = true;
           x.require_preserve = true;
-          if (selinux_enabled)
+          if (selinux_enabled && (! x.set_security_context))
              x.preserve_security_context = true;
           x.preserve_xattr = true;
           x.reduce_diagnostics = true;
@@ -1090,6 +1095,23 @@ main (int argc, char **argv)
         case 'x':
           x.one_file_system = true;
           break;
+
+
+        case 'Z':
+          /* politely decline if we're not on a selinux-enabled kernel. */
+          if( selinux_enabled ) {
+                  if (optarg) {
+                          /* if there's a security_context given set new path
+                             components to that context, too */
+                          if ( setfscreatecon(optarg) < 0 ) {
+                                  (void) fprintf(stderr, _("cannot set default security context %s\n"), optarg);
+                                  exit( 1 );
+                          }
+                  }
+                  x.set_security_context = true;
+                  x.preserve_security_context = false;
+          }
+         break;
 
         case 'S':
           make_backups = true;

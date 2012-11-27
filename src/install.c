@@ -280,6 +280,7 @@ cp_option_init (struct cp_options *x)
   x->data_copy_required = true;
   x->require_preserve = false;
   x->require_preserve_context = false;
+  x->set_security_context = false;
   x->require_preserve_xattr = false;
   x->recursive = false;
   x->sparse_mode = SPARSE_AUTO;
@@ -644,8 +645,7 @@ In the 4th form, create all components of the given DIRECTORY(ies).\n\
 "), stdout);
       fputs (_("\
       --preserve-context  preserve SELinux security context\n\
-  -Z, --context=CONTEXT  set SELinux security context of files and directories\
-\n\
+  -Z, --context[=CTX]      set security context of destination file to default type or to CTX if specified\n\
 "), stdout);
 
       fputs (HELP_OPTION_DESCRIPTION, stdout);
@@ -791,7 +791,7 @@ main (int argc, char **argv)
      we'll actually use backup_suffix_string.  */
   backup_suffix_string = getenv ("SIMPLE_BACKUP_SUFFIX");
 
-  while ((optc = getopt_long (argc, argv, "bcCsDdg:m:o:pt:TvS:Z:", long_options,
+  while ((optc = getopt_long (argc, argv, "bcCsDdg:m:o:pt:TvS:Z", long_options,
                               NULL)) != -1)
     {
       switch (optc)
@@ -869,18 +869,20 @@ main (int argc, char **argv)
                              "this kernel is not SELinux-enabled"));
               break;
             }
+          if ( x.set_security_context || scontext ) {
+             (void) fprintf(stderr, "%s: cannot force target context and preserve it\n", argv[0]);
+             exit( 1 );
+          }
           x.preserve_security_context = true;
-          use_default_selinux_context = false;
           break;
         case 'Z':
-          if ( ! selinux_enabled)
-            {
-              error (0, 0, _("WARNING: ignoring --context (-Z); "
-                             "this kernel is not SELinux-enabled"));
-              break;
-            }
-          scontext = optarg;
-          use_default_selinux_context = false;
+          if ( selinux_enabled )
+          {
+                  if (optarg)
+                          scontext = optarg;
+                  else
+                          x.set_security_context = true;
+          }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
