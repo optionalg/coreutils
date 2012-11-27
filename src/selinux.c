@@ -1,4 +1,4 @@
-/* selinux - core functions for maintaining SELinux labelking
+/* selinux - core functions for maintaining SELinux labeling
    Copyright (C) 2012 Red Hat, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -69,7 +69,7 @@ mode_to_security_class (mode_t m)
   of the path object would be if the current process label created it.
   it then returns the label.
 
-  Returns -1 on failure. errno will be set approptiately.
+  Returns -1 on failure. errno will be set appropriately.
 */
 
 static int
@@ -100,13 +100,13 @@ quit:
 }
 
 /*
-  This function takes a path and a mode, it asks calls computecon to get the
+  This function takes a path and a mode, it calls computecon to get the
   label of the path object if the current process created it, then it calls
   matchpathcon to get the default type for the object.  It substitutes the
   default type into label.  It tells the SELinux Kernel to label all new file
   system objects created by the current process with this label.
 
-  Returns -1 on failure. errno will be set approptiately.
+  Returns -1 on failure. errno will be set appropriately.
 */
 int
 defaultcon (char const *path, mode_t mode)
@@ -153,7 +153,7 @@ quit:
   default label should be, extracts the type field and then modifies the file
   system object.
 
-  Returns -1 on failure. errno will be set approptiately.
+  Returns -1 on failure. errno will be set appropriately.
 */
 static int
 restorecon_private (char const *path, bool preserve)
@@ -238,13 +238,13 @@ quit:
   Path of an existing file system object.
   A boolean indicating whether it should call restorecon_private recursively
   or not.
-  A boolean that indicates whether the function should preserve the objects
+  A boolean that indicates whether the function should preserve the object's
   label or generate a new label using matchpathcon.
 
   If Recurse is selected and the file system object is a directory, restorecon
   calls restorecon_private on every file system object in the directory.
 
-  Returns false on failure. errno will be set approptiately.
+  Returns false on failure. errno will be set appropriately.
 */
 bool
 restorecon (char const *path, bool recurse, bool preserve)
