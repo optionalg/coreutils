@@ -1107,12 +1107,8 @@ main (int argc, char **argv)
                   /* if there's a security_context given set new path
                      components to that context, too.  */
                   if (setfscreatecon (optarg) < 0)
-                    {
-                      fprintf (stderr,
-                               _("cannot set default security context %s\n"),
-                               optarg);
-                      exit (1);
-                    }
+                    error (EXIT_FAILURE, 0,
+                           _("cannot set default security context %s"), optarg);
                 }
                 x.set_security_context = true;
                 x.preserve_security_context = false;

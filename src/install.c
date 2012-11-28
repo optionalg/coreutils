@@ -870,12 +870,8 @@ main (int argc, char **argv)
               break;
             }
           if (x.set_security_context || scontext)
-            {
-              fprintf (stderr,
-                       "%s: cannot force target context and preserve it\n",
-                       argv[0]);
-              exit (1);
-            }
+            error (EXIT_FAILURE, 0,
+                   _("cannot force target context and preserve it"));
           x.preserve_security_context = true;
           break;
         case 'Z':
