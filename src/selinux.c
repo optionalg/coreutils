@@ -128,10 +128,8 @@ defaultcon (char const *path, mode_t mode)
 
 //  printf("defaultcon %s %s\n", path, context_str(tcontext));
 quit:
-  if (scontext)
-    context_free (scontext);
-  if (scontext)
-    context_free (tcontext);
+  context_free (scontext);
+  context_free (tcontext);
   freecon (scon);
   freecon (tcon);
   return rc;
@@ -218,10 +216,8 @@ restorecon_private (char const *path, bool preserve)
 //  printf("restorcon %s %s\n", path, context_str(tcontext));
 quit:
   close (fd);
-  if (scontext)
-    context_free (scontext);
-  if (scontext)
-    context_free (tcontext);
+  context_free (scontext);
+  context_free (tcontext);
   freecon (scon);
   freecon (tcon);
   return rc;
