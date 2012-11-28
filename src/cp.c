@@ -228,7 +228,10 @@ Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.\n\
                                  destination file is missing\n\
   -v, --verbose                explain what is being done\n\
   -x, --one-file-system        stay on this file system\n\
-  -Z, --context[=CTX]      set security context of destination file to default type or to CTX if specified\n\
+"), stdout);
+      fputs (_("\
+  -Z, --context[=CTX]          set SELinux security context of destination\n\
+                                 file to default type, or to CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);

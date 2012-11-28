@@ -63,7 +63,8 @@ Create the special file NAME of the given TYPE.\n\
   -m, --mode=MODE    set file permission bits to MODE, not a=rw - umask\n\
 "), stdout);
       fputs (_("\
-  -Z, --context[=CTX]  set the SELinux security context of NAME to default type or to CTX if specified\n\
+  -Z, --context[=CTX]  set the SELinux security context of NAME to\n\
+                         default type, or to CTX if specified\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);

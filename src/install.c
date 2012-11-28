@@ -645,7 +645,8 @@ In the 4th form, create all components of the given DIRECTORY(ies).\n\
 "), stdout);
       fputs (_("\
       --preserve-context  preserve SELinux security context\n\
-  -Z, --context[=CTX]      set security context of destination file to default type or to CTX if specified\n\
+  -Z, --context[=CTX]     set SELinux security context of destination file to\n\
+                            default type, or to CTX if specified\n\
 "), stdout);
 
       fputs (HELP_OPTION_DESCRIPTION, stdout);

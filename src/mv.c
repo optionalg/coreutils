@@ -318,7 +318,8 @@ If you specify more than one of -i, -f, -n, only the final one takes effect.\n\
                                  than the destination file or when the\n\
                                  destination file is missing\n\
   -v, --verbose                explain what is being done\n\
-  -Z, --context                set security context of destination file to default type\n \
+  -Z, --context                set SELinux security context of destination\n\
+                                 file to default type\n\
 "), stdout);
       fputs (HELP_OPTION_DESCRIPTION, stdout);
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
