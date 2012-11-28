@@ -21,18 +21,12 @@
 #include <selinux/flask.h>
 #include <selinux/context.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <libgen.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <unistd.h>
-#include "selinux.h"
 
 #include "error.h"
 #include "system.h"
 #include "fts.h"
+#include "selinux.h"
 
 /*
   This function has being added to libselinux-2.1.12-5, but is here
