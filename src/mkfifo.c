@@ -149,19 +149,21 @@ main (int argc, char **argv)
     }
 
   for (; optind < argc; ++optind)
-    if (set_security_context)
-      defaultcon (argv[optind], S_IFIFO);
-    if (mkfifo (argv[optind], newmode) != 0)
-      {
-        error (0, errno, _("cannot create fifo %s"), quote (argv[optind]));
-        exit_status = EXIT_FAILURE;
-      }
-    else if (specified_mode && lchmod (argv[optind], newmode) != 0)
-      {
-        error (0, errno, _("cannot set permissions of `%s'"),
-               quote (argv[optind]));
-        exit_status = EXIT_FAILURE;
-      }
+    {
+      if (set_security_context)
+        defaultcon (argv[optind], S_IFIFO);
+      if (mkfifo (argv[optind], newmode) != 0)
+        {
+          error (0, errno, _("cannot create fifo %s"), quote (argv[optind]));
+          exit_status = EXIT_FAILURE;
+        }
+      else if (specified_mode && lchmod (argv[optind], newmode) != 0)
+        {
+          error (0, errno, _("cannot set permissions of `%s'"),
+                 quote (argv[optind]));
+          exit_status = EXIT_FAILURE;
+        }
+    }
 
   exit (exit_status);
 }
