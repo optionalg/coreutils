@@ -109,18 +109,13 @@ defaultcon (char const *path, mode_t mode)
   security_context_t scon = NULL, tcon = NULL;
   context_t scontext = NULL, tcontext = NULL;
 
-  rc = matchpathcon (path, mode, &scon);
-  if (rc < 0)
+  if (matchpathcon (path, mode, &scon) < 0)
     goto quit;
-  rc = computecon (path, mode, &tcon);
-  if (rc < 0)
+  if (computecon (path, mode, &tcon) < 0)
     goto quit;
-  scontext = context_new (scon);
-  rc = -1;
-  if (!scontext)
+  if (!(scontext = context_new (scon)))
     goto quit;
-  tcontext = context_new (tcon);
-  if (!tcontext)
+  if (!(tcontext = context_new (tcon)))
     goto quit;
 
   context_type_set (tcontext, context_type_get (scontext));
@@ -171,41 +166,32 @@ restorecon_private (char const *path, bool preserve)
 
   if (fd)
     {
-      rc = fstat (fd, &sb);
-      if (rc < 0)
+      if (fstat (fd, &sb) < 0)
         goto quit;
     }
   else
     {
-      rc = lstat (path, &sb);
-      if (rc < 0)
+      if (lstat (path, &sb) < 0)
         goto quit;
     }
 
-  rc = matchpathcon (path, sb.st_mode, &scon);
-  if (rc < 0)
+  if (matchpathcon (path, sb.st_mode, &scon) < 0)
     goto quit;
-  scontext = context_new (scon);
-  rc = -1;
-  if (!scontext)
+  if (!(scontext = context_new (scon)))
     goto quit;
 
   if (fd)
     {
-      rc = fgetfilecon (fd, &tcon);
-      if (rc < 0)
+      if (fgetfilecon (fd, &tcon) < 0)
         goto quit;
     }
   else
     {
-      rc = lgetfilecon (path, &tcon);
-      if (rc < 0)
+      if (lgetfilecon (path, &tcon) < 0)
         goto quit;
     }
 
-  rc = -1;
-  tcontext = context_new (tcon);
-  if (!tcontext)
+  if (!(tcontext = context_new (tcon)))
     goto quit;
 
   context_type_set (tcontext, context_type_get (scontext));
