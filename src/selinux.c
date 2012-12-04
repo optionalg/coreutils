@@ -170,10 +170,10 @@ restorecon_private (char const *path, bool local)
     }
 
   fd = open (path, O_RDONLY | O_NOFOLLOW);
-  if (!fd && (errno != ELOOP))
+  if (fd == -1 && (errno != ELOOP))
     goto quit;
 
-  if (fd)
+  if (fd != -1)
     {
       if (fstat (fd, &sb) < 0)
         goto quit;
@@ -189,7 +189,7 @@ restorecon_private (char const *path, bool local)
   if (!(scontext = context_new (scon)))
     goto quit;
 
-  if (fd)
+  if (fd != -1)
     {
       if (fgetfilecon (fd, &tcon) < 0)
         goto quit;
@@ -210,13 +210,14 @@ restorecon_private (char const *path, bool local)
   if (!(constr = context_str (tcontext)))
     goto quit;
 
-  if (fd)
+  if (fd != -1)
     rc = fsetfilecon (fd, constr);
   else
     rc = lsetfilecon (path, constr);
 
 quit:
-  close (fd);
+  if (fd != -1)
+    close (fd);
   context_free (scontext);
   context_free (tcontext);
   freecon (scon);
