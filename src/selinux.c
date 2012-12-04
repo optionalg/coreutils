@@ -193,15 +193,17 @@ restorecon_private (char const *path, bool preserve)
   if (fd)
     {
       rc = fgetfilecon (fd, &tcon);
-      if (!rc)
+      if (rc < 0)
         goto quit;
     }
   else
     {
       rc = lgetfilecon (path, &tcon);
-      if (!rc)
+      if (rc < 0)
         goto quit;
     }
+
+  rc = -1;
   tcontext = context_new (tcon);
   if (!tcontext)
     goto quit;
