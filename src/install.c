@@ -360,7 +360,8 @@ setdefaultfilecon (char const *file)
   first_call = false;
 
   /* If there's an error determining the context, or it has none,
-     return to allow default context */
+     return to allow default context.  Note the "<<none>>" check
+     is only needed for libselinux < 1.20 (2005-01-04).  */
   if ((matchpathcon (file, st.st_mode, &scontext) != 0)
       || STREQ (scontext, "<<none>>"))
     {
