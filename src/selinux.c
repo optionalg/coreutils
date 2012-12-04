@@ -108,6 +108,8 @@ defaultcon (char const *path, mode_t mode)
   int rc = -1;
   security_context_t scon = NULL, tcon = NULL;
   context_t scontext = NULL, tcontext = NULL;
+  const char *contype;
+  char *constr;
 
   if (matchpathcon (path, mode, &scon) < 0)
     goto quit;
@@ -118,8 +120,14 @@ defaultcon (char const *path, mode_t mode)
   if (!(tcontext = context_new (tcon)))
     goto quit;
 
-  context_type_set (tcontext, context_type_get (scontext));
-  rc = setfscreatecon (context_str (tcontext));
+  if (!(contype = context_type_get (scontext)))
+    goto quit;
+  if (context_type_set (tcontext, contype))
+    goto quit;
+  if (!(constr = context_str (tcontext)))
+    goto quit;
+
+  rc = setfscreatecon (constr);
 
 //  printf("defaultcon %s %s\n", path, context_str(tcontext));
 quit:
@@ -149,6 +157,8 @@ restorecon_private (char const *path, bool preserve)
   struct stat sb;
   security_context_t scon = NULL, tcon = NULL;
   context_t scontext = NULL, tcontext = NULL;
+  const char *contype;
+  char *constr;
   int fd;
 
   if (preserve)
@@ -194,12 +204,17 @@ restorecon_private (char const *path, bool preserve)
   if (!(tcontext = context_new (tcon)))
     goto quit;
 
-  context_type_set (tcontext, context_type_get (scontext));
+  if (!(contype = context_type_get (scontext)))
+    goto quit;
+  if (context_type_set (tcontext, contype))
+    goto quit;
+  if (!(constr = context_str (tcontext)))
+    goto quit;
 
   if (fd)
-    rc = fsetfilecon (fd, context_str (tcontext));
+    rc = fsetfilecon (fd, constr);
   else
-    rc = lsetfilecon (path, context_str (tcontext));
+    rc = lsetfilecon (path, constr);
 
 //  printf("restorcon %s %s\n", path, context_str(tcontext));
 quit:
