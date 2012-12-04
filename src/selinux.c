@@ -138,10 +138,10 @@ quit:
 }
 
 /*
-  This function takes a PATH of an existing file system object, and a boolean
-  that indicates whether the function should preserve the object's label or
-  generate a new label using matchpathcon.  If the function
-  is called with preserve, it will ask the SELinux Kernel what the default label
+  This function takes a PATH of an existing file system object, and a LOCAL
+  boolean that indicates whether the function should set the object's label
+  to the default for the local process, or one using system wide settings.
+  If LOCAL == true, it will ask the SELinux Kernel what the default label
   for all objects created should be and then sets the label on the object.
   Otherwise it calls matchpathcon on the object to ask the system what the
   default label should be, extracts the type field and then modifies the file
@@ -150,7 +150,7 @@ quit:
   Returns -1 on failure.  errno will be set appropriately.
 */
 static int
-restorecon_private (char const *path, bool preserve)
+restorecon_private (char const *path, bool local)
 {
   int rc = -1;
   struct stat sb;
@@ -160,7 +160,7 @@ restorecon_private (char const *path, bool preserve)
   char *constr;
   int fd;
 
-  if (preserve)
+  if (local)
     {
       if (getfscreatecon (&tcon) < 0)
         return rc;
@@ -226,25 +226,26 @@ quit:
 
 /*
   This function takes three parameters:
-  Path of an existing file system object.
-  A boolean indicating whether it should call restorecon_private recursively.
-  A boolean that indicates whether the function should preserve the object's
-  label or generate a new label using matchpathcon.
 
-  If Recurse is selected and the file system object is a directory, restorecon
-  calls restorecon_private on every file system object in the directory.
+  PATH of an existing file system object.
+
+  A RECURSE boolean which if the file system object is a directory, will
+  call restorecon_private on every file system object in the directory.
+
+  A LOCAL boolean that indicates whether the function should set object labels
+  to the default for the local process, or use system wide settings.
 
   Returns false on failure.  errno will be set appropriately.
 */
 bool
-restorecon (char const *path, bool recurse, bool preserve)
+restorecon (char const *path, bool recurse, bool local)
 {
   const char *mypath[2] = { path, NULL };
   FTS *fts;
   bool ok = true;
 
   if (!recurse)
-    return restorecon_private (path, preserve);
+    return restorecon_private (path, local);
 
   fts = fts_open ((char *const *) mypath, FTS_PHYSICAL, NULL);
   while (1)
@@ -263,7 +264,7 @@ restorecon (char const *path, bool recurse, bool preserve)
           break;
         }
 
-      ok &= restorecon_private (fts->fts_path, preserve);
+      ok &= restorecon_private (fts->fts_path, local);
     }
 
   if (fts_close (fts) != 0)
