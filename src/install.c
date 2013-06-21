@@ -306,7 +306,8 @@ cp_option_init (struct cp_options *x)
 #ifdef ENABLE_MATCHPATHCON
 /* Modify file context to match the specified policy.
    If an error occurs the file will remain with the default directory
-   context.  */
+   context.  Note this sets the context to that returned by matchpathcon,
+   and thus discards MLS levels and user identity of the FILE.  */
 static void
 setdefaultfilecon (char const *file)
 {
@@ -872,10 +873,19 @@ main (int argc, char **argv)
               break;
             }
           x.preserve_security_context = true;
+          use_default_selinux_context = false;
           break;
         case 'Z':
           if (selinux_enabled)
             {
+              /* Disable use of the install(1) specific setdefaultfilecon().
+                 Note setdefaultfilecon() is different from the newer and more
+                 generic restorecon() in that the former sets the context of
+                 the dest files to that returned by matchpathcon directly,
+                 thus discarding MLS level and user identity of the file.
+                 TODO: consider removing setdefaultfilecon() in future.  */
+              use_default_selinux_context = false;
+
               if (optarg)
                 scontext = optarg;
               else

@@ -145,7 +145,8 @@ quit:
   for all objects created should be and then sets the label on the object.
   Otherwise it calls matchpathcon on the object to ask the system what the
   default label should be, extracts the type field and then modifies the file
-  system object.
+  system object.  Note only the type field is updated, thus preserving MLS
+  levels and user identity etc. of the PATH.
 
   Returns -1 on failure.  errno will be set appropriately.
 */
