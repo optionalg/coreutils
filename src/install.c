@@ -279,8 +279,6 @@ cp_option_init (struct cp_options *x)
   x->reduce_diagnostics=false;
   x->data_copy_required = true;
   x->require_preserve = false;
-  x->require_preserve_context = false;
-  x->set_security_context = false;
   x->require_preserve_xattr = false;
   x->recursive = false;
   x->sparse_mode = SPARSE_AUTO;
@@ -296,7 +294,9 @@ cp_option_init (struct cp_options *x)
 
   x->open_dangling_dest_symlink = false;
   x->update = false;
-  x->preserve_security_context = false;
+  x->require_preserve_context = false;  /* Not used by install currently.  */
+  x->preserve_security_context = false; /* Whether to copy context from src.  */
+  x->set_security_context = false;    /* Whether to set sys default context.  */
   x->preserve_xattr = false;
   x->verbose = false;
   x->dest_info = NULL;
@@ -871,9 +871,6 @@ main (int argc, char **argv)
                              "this kernel is not SELinux-enabled"));
               break;
             }
-          if (x.set_security_context || scontext)
-            error (EXIT_FAILURE, 0,
-                   _("cannot force target context and preserve it"));
           x.preserve_security_context = true;
           break;
         case 'Z':
@@ -900,11 +897,6 @@ main (int argc, char **argv)
     error (EXIT_FAILURE, 0,
            _("target directory not allowed when installing a directory"));
 
-  if (x.preserve_security_context && scontext != NULL)
-    error (EXIT_FAILURE, 0,
-           _("cannot force target context to %s and preserve it"),
-           quote (scontext));
-
   if (backup_suffix_string)
     simple_backup_suffix = xstrdup (backup_suffix_string);
 
@@ -912,6 +904,10 @@ main (int argc, char **argv)
                    ? xget_version (_("backup type"),
                                    version_control_string)
                    : no_backups);
+
+  if (x.preserve_security_context && (x.set_security_context || scontext))
+    error (EXIT_FAILURE, 0,
+           _("cannot set target context and preserve it"));
 
   if (scontext && setfscreatecon (scontext) < 0)
     error (EXIT_FAILURE, errno,
