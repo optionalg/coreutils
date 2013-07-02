@@ -114,7 +114,12 @@ main (int argc, char **argv)
           specified_mode = optarg;
           break;
         case 'Z':
-          if (is_selinux_enabled() > 0)
+          if (is_smack_enabled ())
+            {
+              /* We don't yet support -Z to restore context with SMACK.  */
+              scontext = optarg;
+            }
+          else if (is_selinux_enabled () > 0)
             {
               if (optarg)
                 scontext = optarg;
