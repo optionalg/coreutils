@@ -195,6 +195,12 @@ main (int argc, char **argv)
               else
                 options.set_security_context = true;
             }
+          else if (optarg)
+            {
+              error (0, 0,
+                     _("warning: ignoring --context; "
+                       "it requires an SELinux/SMACK-enabled kernel"));
+            }
           break;
         case_GETOPT_HELP_CHAR;
         case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);

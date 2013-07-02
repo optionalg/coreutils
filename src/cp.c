@@ -1108,6 +1108,12 @@ main (int argc, char **argv)
               else
                 x.set_security_context = true;
             }
+          else if (optarg)
+            {
+              error (0, 0,
+                     _("warning: ignoring --context; "
+                       "it requires an SELinux-enabled kernel"));
+            }
           break;
 
         case 'S':
