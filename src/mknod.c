@@ -96,7 +96,7 @@ main (int argc, char **argv)
   int expected_operands;
   mode_t node_type;
   security_context_t scontext = NULL;
-  int set_security_context = false;
+  bool set_security_context = false;
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);

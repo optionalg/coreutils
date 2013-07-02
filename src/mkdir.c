@@ -93,7 +93,7 @@ struct mkdir_options
   mode_t mode_bits;
 
   /* Set the SELinux File Context.  */
-  int set_security_context;
+  bool set_security_context;
 
   /* If not null, format to use when reporting newly made directories.  */
   char const *created_directory_format;

@@ -76,10 +76,10 @@ main (int argc, char **argv)
 {
   mode_t newmode;
   char const *specified_mode = NULL;
-  int set_security_context = false;
   int exit_status = EXIT_SUCCESS;
   int optc;
   security_context_t scontext = NULL;
+  bool set_security_context = false;
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);
