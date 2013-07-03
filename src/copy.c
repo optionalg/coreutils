@@ -851,8 +851,11 @@ copy_reg (char const *src_name, char const *dst_name,
               if (all_errors || (some_errors && !errno_unsupported (errno)))
                 error (0, errno, _("failed to set the security context of %s"),
                        quote_n (0, dst_name));
-              return_val = false;
-              goto close_src_and_dst_desc;
+              if (x->require_preserve_context)
+                {
+                  return_val = false;
+                  goto close_src_and_dst_desc;
+                }
             }
         }
 
