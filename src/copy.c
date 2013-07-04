@@ -835,10 +835,10 @@ copy_reg (char const *src_name, char const *dst_name,
       dest_errno = errno;
 
       /* When using cp --preserve=context to copy to an existing destination,
-         use the default context rather than that of the source.  Why?
-         1) the src context may prohibit writing, and
-         2) because it's more consistent to use the same context
-         that is used when the destination file doesn't already exist.  */
+         reset the context as per the default context, which has already been
+         set according to the src.
+         When using the mutually exclusive -Z option, then adjust the type of
+         the existing context according to the system default for the dest.  */
       if ((x->set_security_context || x->preserve_security_context)
           && 0 <= dest_desc)
         {
