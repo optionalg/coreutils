@@ -787,9 +787,9 @@ cp_option_init (struct cp_options *x)
   x->preserve_mode = false;
   x->preserve_timestamps = false;
   x->explicit_no_preserve_mode = false;
-  x->preserve_security_context = false;
-  x->require_preserve_context = false;
-  x->set_security_context = false;
+  x->preserve_security_context = false; /* -a or --preserve=context.  */
+  x->require_preserve_context = false;  /* --preserve=context.  */
+  x->set_security_context = false;      /* -Z, set sys default context. */
   x->preserve_xattr = false;
   x->reduce_diagnostics = false;
   x->require_preserve_xattr = false;
@@ -881,11 +881,8 @@ decode_preserve_arg (char const *arg, struct cp_options *x, bool on_off)
           break;
 
         case PRESERVE_CONTEXT:
-          if (! x->set_security_context)
-            {
-              x->preserve_security_context = on_off;
-              x->require_preserve_context = on_off;
-            }
+          x->require_preserve_context = on_off;
+          x->preserve_security_context = on_off;
           break;
 
         case PRESERVE_XATTR:
@@ -899,7 +896,7 @@ decode_preserve_arg (char const *arg, struct cp_options *x, bool on_off)
           x->preserve_ownership = on_off;
           x->preserve_links = on_off;
           x->explicit_no_preserve_mode = !on_off;
-          if (selinux_enabled && (! x->set_security_context))
+          if (selinux_enabled)
             x->preserve_security_context = on_off;
           x->preserve_xattr = on_off;
           break;
@@ -926,6 +923,7 @@ main (int argc, char **argv)
   bool copy_contents = false;
   char *target_directory = NULL;
   bool no_target_directory = false;
+  security_context_t scontext = NULL;
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);
@@ -969,7 +967,7 @@ main (int argc, char **argv)
           x.preserve_mode = true;
           x.preserve_timestamps = true;
           x.require_preserve = true;
-          if (selinux_enabled && (! x.set_security_context))
+          if (selinux_enabled)
              x.preserve_security_context = true;
           x.preserve_xattr = true;
           x.reduce_diagnostics = true;
@@ -1106,15 +1104,9 @@ main (int argc, char **argv)
           if (selinux_enabled)
             {
               if (optarg)
-                {
-                  /* if there's a security_context given set new path
-                     components to that context, too.  */
-                  if (setfscreatecon (optarg) < 0)
-                    error (EXIT_FAILURE, 0,
-                           _("cannot set default security context %s"), optarg);
-                }
+                scontext = optarg;
+              else
                 x.set_security_context = true;
-                x.preserve_security_context = false;
             }
           break;
 
@@ -1176,13 +1168,24 @@ main (int argc, char **argv)
   if (x.unlink_dest_after_failed_open && (x.hard_link || x.symbolic_link))
     x.unlink_dest_before_opening = true;
 
-  if (x.preserve_security_context)
-    {
-      if (!selinux_enabled)
-        error (EXIT_FAILURE, 0,
-               _("cannot preserve security context "
-                 "without an SELinux-enabled kernel"));
-    }
+  /* Ensure -z overrides -a.  */
+  if ((x.set_security_context || scontext)
+      && ! x.require_preserve_context)
+    x.preserve_security_context = false;
+
+  if (x.preserve_security_context && (x.set_security_context || scontext))
+    error (EXIT_FAILURE, 0,
+           _("cannot set target context and preserve it"));
+
+  if (x.require_preserve_context && ! selinux_enabled)
+    error (EXIT_FAILURE, 0,
+           _("cannot preserve security context "
+             "without an SELinux-enabled kernel"));
+
+  if (scontext && setfscreatecon (optarg) < 0)
+    error (EXIT_FAILURE, errno,
+           _("failed to set default file creation context to %s"),
+           quote (optarg));
 
 #if !USE_XATTR
   if (x.require_preserve_xattr)
