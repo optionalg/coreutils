@@ -874,7 +874,13 @@ copy_reg (char const *src_name, char const *dst_name,
 
   if (*new_dst)
     {
-      if (x->set_security_context && (! x->require_preserve_context))
+      /* Set the context for the about to be created file,
+         based on the default context for the process,
+         with type adjusted as per the destination path.
+         Do not do this though when cp --preserve=context is specified
+         in which case we'll use the default context which has
+         already been set from the context of the source.  */
+      if (x->set_security_context && ! x->require_preserve_context)
         defaultcon (dst_name, dst_mode);
 
     open_with_O_CREAT:;
