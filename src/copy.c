@@ -846,7 +846,7 @@ copy_reg (char const *src_name, char const *dst_name,
                              || x->require_preserve_context);
           bool some_errors = !all_errors && !x->reduce_diagnostics;
 
-          if (restorecon (dst_name, 0, x->preserve_security_context) < 0)
+          if (! restorecon (dst_name, 0, x->preserve_security_context))
             {
               if (all_errors || (some_errors && !errno_unsupported (errno)))
                 error (0, errno, _("failed to set file system context on %s"),

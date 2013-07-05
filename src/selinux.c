@@ -247,7 +247,7 @@ restorecon (char const *path, bool recurse, bool local)
   bool ok = true;
 
   if (!recurse)
-    return restorecon_private (path, local);
+    return restorecon_private (path, local) != -1;
 
   fts = fts_open ((char *const *) mypath, FTS_PHYSICAL, NULL);
   while (1)
@@ -266,7 +266,7 @@ restorecon (char const *path, bool recurse, bool local)
           break;
         }
 
-      ok &= restorecon_private (fts->fts_path, local);
+      ok &= restorecon_private (fts->fts_path, local) != -1;
     }
 
   if (fts_close (fts) != 0)
