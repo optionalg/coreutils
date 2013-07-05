@@ -97,7 +97,7 @@ echo > g
 cp --preserve=context f g 2> out && fail=1
 # Here, we *do* expect the destination to be empty.
 test -s g && fail=1
-sed "s/ .g' to .*//" out > k
+sed "s/ .g'.*//" out > k
 mv k out
 compare exp out || fail=1
 
@@ -107,7 +107,7 @@ echo > g
 cp -a --preserve=context f g 2> out2 && fail=1
 # Here, we *do* expect the destination to be empty.
 test -s g && fail=1
-sed "s/ .g' to .*//" out2 > k
+sed "s/ .g'.*//" out2 > k
 mv k out2
 compare exp out2 || fail=1
 

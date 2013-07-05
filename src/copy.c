@@ -849,7 +849,7 @@ copy_reg (char const *src_name, char const *dst_name,
           if (! restorecon (dst_name, 0, x->preserve_security_context))
             {
               if (all_errors || (some_errors && !errno_unsupported (errno)))
-                error (0, errno, _("failed to set file system context on %s"),
+                error (0, errno, _("failed to set the security context of %s"),
                        quote_n (0, dst_name));
               return_val = false;
               goto close_src_and_dst_desc;
