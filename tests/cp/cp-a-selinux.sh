@@ -1,5 +1,5 @@
 #!/bin/sh
-# Ensure that cp -a and cp --preserve=context work properly.
+# Ensure that cp -Z, -a and cp --preserve=context work properly.
 # In particular, test on a writable NFS partition.
 # Check also locally if --preserve=context, -a and --preserve=all
 # does work
@@ -110,5 +110,36 @@ test -s g && fail=1
 sed "s/ .g'.*//" out2 > k
 mv k out2
 compare exp out2 || fail=1
+
+for no_g_cmd in '' 'rm -f g'; do
+  # restorecon equivalent.  Note even though the context
+  # returned from matchpathcon() will not match $ctx
+  # the resulting ENOTSUP warning will be suppressed.
+   # With absolute path
+  $no_g_cmd
+  cp -Z f $(realpath g) || fail=1
+   # With relative path
+  $no_g_cmd
+  cp -Z f g || fail=1
+   # -Z overrides -a
+  $no_g_cmd
+  cp -Z -a f g || fail=1
+   # -Z doesn't take an arg
+  $no_g_cmd
+  cp -Z "$ctx" f g && fail=1
+
+  # Explicit context
+  $no_g_cmd
+   # Explicitly defaulting to the global $ctx should work
+  cp --context="$ctx" f g || fail=1
+   # --context overrides -a
+  $no_g_cmd
+  cp -a --context="$ctx" f g || fail=1
+done
+
+# Mutually exlusive options
+cp -Z --preserve=context f g && fail=1
+cp --preserve=context -Z f g && fail=1
+cp --preserve=context --context="$ctx" f g && fail=1
 
 Exit $fail
