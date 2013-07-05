@@ -25,7 +25,10 @@
 
 #include "error.h"
 #include "system.h"
+#include "canonicalize.h"
+#include "dosname.h"
 #include "fts.h"
+#include "quote.h"
 #include "selinux.h"
 
 /*
@@ -110,6 +113,17 @@ defaultcon (char const *path, mode_t mode)
   context_t scontext = NULL, tcontext = NULL;
   const char *contype;
   char *constr;
+  char *newpath = NULL;
+
+  if (! IS_ABSOLUTE_FILE_NAME (path))
+    {
+      /* Generate absolute path as required by subsequent matchpathcon(),
+         with libselinux < 2.1.5 2011-0826.  */
+      newpath = canonicalize_filename_mode (path, CAN_MISSING);
+      if (! newpath)
+        error (EXIT_FAILURE, errno, _("error canonicalizing %s"),
+               quote (path));
+    }
 
   if (matchpathcon (path, mode, &scon) < 0)
     goto quit;
@@ -134,6 +148,7 @@ quit:
   context_free (tcontext);
   freecon (scon);
   freecon (tcon);
+  free (newpath);
   return rc;
 }
 
@@ -242,14 +257,32 @@ quit:
 bool
 restorecon (char const *path, bool recurse, bool local)
 {
-  const char *mypath[2] = { path, NULL };
+  char *newpath = NULL;
   FTS *fts;
   bool ok = true;
 
-  if (!recurse)
-    return restorecon_private (path, local) != -1;
+  if (! IS_ABSOLUTE_FILE_NAME (path) && ! local)
+    {
+      /* Generate absolute path as required by subsequent matchpathcon(),
+         with libselinux < 2.1.5 2011-0826.  Also generating the absolute
+         path before the fts walk, will generate absolute paths in the
+         fts entries, which may be quicker to process in any case.  */
+      newpath = canonicalize_filename_mode (path, CAN_MISSING);
+      if (! newpath)
+        error (EXIT_FAILURE, errno, _("error canonicalizing %s"),
+               quote (path));
+    }
 
-  fts = fts_open ((char *const *) mypath, FTS_PHYSICAL, NULL);
+  const char *ftspath[2] = { newpath ? newpath : path, NULL };
+
+  if (! recurse)
+    {
+      ok = restorecon_private (*ftspath, local) != -1;
+      free (newpath);
+      return ok;
+    }
+
+  fts = fts_open ((char *const *) ftspath, FTS_PHYSICAL, NULL);
   while (1)
     {
       FTSENT *ent;
@@ -275,5 +308,6 @@ restorecon (char const *path, bool recurse, bool local)
       ok = false;
     }
 
+  free (newpath);
   return ok;
 }
