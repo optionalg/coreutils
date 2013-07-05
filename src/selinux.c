@@ -126,7 +126,16 @@ defaultcon (char const *path, mode_t mode)
     }
 
   if (matchpathcon (path, mode, &scon) < 0)
-    goto quit;
+    {
+      /* "No such file or directory" is a confusing error,
+         when processing files, when in fact it was the
+         associated default context that was not found.
+         Therefore map the error to something more appropriate
+         to the context in which we're using matchpathcon().  */
+      if (errno == ENOENT)
+        errno = ENODATA;
+      goto quit;
+    }
   if (computecon (path, mode, &tcon) < 0)
     goto quit;
   if (!(scontext = context_new (scon)))
@@ -201,7 +210,16 @@ restorecon_private (char const *path, bool local)
     }
 
   if (matchpathcon (path, sb.st_mode, &scon) < 0)
-    goto quit;
+    {
+      /* "No such file or directory" is a confusing error,
+         when processing files, when in fact it was the
+         associated default context that was not found.
+         Therefore map the error to something more appropriate
+         to the context in which we're using matchpathcon().  */
+      if (errno == ENOENT)
+        errno = ENODATA;
+      goto quit;
+    }
   if (!(scontext = context_new (scon)))
     goto quit;
 
