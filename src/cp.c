@@ -1188,6 +1188,12 @@ main (int argc, char **argv)
            _("cannot preserve security context "
              "without an SELinux-enabled kernel"));
 
+  /* FIXME: This handles new files.  But what about existing files?
+     I.E. if updating a tree, new files would have the specified context,
+     but shouldn't existing files be updated for consistency like this?
+       if (scontext)
+         restorecon (dst_path, 0, true);
+   */
   if (scontext && setfscreatecon (optarg) < 0)
     error (EXIT_FAILURE, errno,
            _("failed to set default file creation context to %s"),

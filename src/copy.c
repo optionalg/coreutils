@@ -967,6 +967,11 @@ copy_reg (char const *src_name, char const *dst_name,
       goto close_src_and_dst_desc;
     }
 
+  /* FIXME: This call seems redundant?
+     The context should have already been set appropriately
+     by the previous restorecon() and defaultcon() in this function?
+     Also why was the recurse flag set when copy_reg() only deals
+     with single regular files?  */
   if (x->set_security_context)
     restorecon (dst_name, 1, false);
 
@@ -2231,7 +2236,11 @@ copy_internal (char const *src_name, char const *dst_name,
         }
     }
   else if (x->set_security_context)
-    restorecon (dst_name, 1, false);
+    {
+      /* FIXME: Why do we need this exactly?
+         Can we optimize out in certain cases?  */
+      restorecon (dst_name, 1, false);
+    }
 
   if (S_ISDIR (src_mode))
     {
@@ -2467,6 +2476,9 @@ copy_internal (char const *src_name, char const *dst_name,
             }
         }
 
+      /* FIXME: Why is this needed exactly?
+         Won't it impact a global setfscreatecon()
+         done for cp --context=... for example?  */
       if (x->preserve_security_context)
         restore_default_fscreatecon_or_die ();
 
